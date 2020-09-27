@@ -155,3 +155,6 @@ debug.env
 
 #ctags
 tags
+
+src/transformers/dynamicconv_layer/dynamicconv_cuda_backward.cu
+src/transformers/dynamicconv_layer/dynamicconv_cuda_forward.cu

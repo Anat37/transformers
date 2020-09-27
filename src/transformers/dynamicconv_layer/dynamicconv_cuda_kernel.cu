@@ -8,7 +8,7 @@
 #include "dynamicconv_cuda.cuh"
 #include "dynamicconv_cuda_forward.cu"
 #include "dynamicconv_cuda_backward.cu"
-#include "../cuda_utils.cu"
+#include "cuda_utils.cu"
 
 // FS is filter size and kernels are specialized for filter sizes
 template<int FS, int SB, int padding_l, typename scalar_t>
