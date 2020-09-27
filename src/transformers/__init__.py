@@ -482,6 +482,18 @@ if is_torch_available():
         XLMRobertaForTokenClassification,
         XLMRobertaModel,
     )
+    from .modeling_convbert import (
+        ConvbertPreTrainedModel,
+        ConvbertModel,
+        ConvbertForPreTraining,
+        ConvbertForMaskedLM,
+        ConvbertForMultipleChoice,
+        ConvbertForSequenceClassification,
+        ConvbertForQuestionAnswering,
+        ConvbertForTokenClassification,
+        load_tf_weights_in_convbert,
+        CONVBERT_PRETRAINED_MODEL_ARCHIVE_LIST,
+    )
     from .modeling_xlnet import (
         XLNET_PRETRAINED_MODEL_ARCHIVE_LIST,
         XLNetForMultipleChoice,
