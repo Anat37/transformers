@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#pragma once
 
 #include <ATen/ATen.h>
 #include <c10/cuda/CUDAStream.h>
@@ -12,16 +13,8 @@
 #include <cuda_fp16.h>
 #include <cuda_runtime.h>
 
-#include <algorithm>
-#include <functional>
 #include <iostream>
-#include <stdexcept>
-#include <utility>
 #include <vector>
-
-#include <stdlib.h>
-#include <assert.h>
-#include <math.h>
 
 #define SHFL_MASK 0xffffffff
 

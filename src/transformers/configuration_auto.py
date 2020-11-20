@@ -22,6 +22,7 @@ from .configuration_bart import BART_PRETRAINED_CONFIG_ARCHIVE_MAP, BartConfig
 from .configuration_bert import BERT_PRETRAINED_CONFIG_ARCHIVE_MAP, BertConfig
 from .configuration_bert_generation import BertGenerationConfig
 from .configuration_camembert import CAMEMBERT_PRETRAINED_CONFIG_ARCHIVE_MAP, CamembertConfig
+from .configuration_convbert import ConvbertConfig
 from .configuration_ctrl import CTRL_PRETRAINED_CONFIG_ARCHIVE_MAP, CTRLConfig
 from .configuration_distilbert import DISTILBERT_PRETRAINED_CONFIG_ARCHIVE_MAP, DistilBertConfig
 from .configuration_dpr import DPR_PRETRAINED_CONFIG_ARCHIVE_MAP, DPRConfig
@@ -92,6 +93,7 @@ CONFIG_MAPPING = OrderedDict(
         ("albert", AlbertConfig),
         ("bert-generation", BertGenerationConfig),
         ("camembert", CamembertConfig),
+        ("convbert", ConvbertConfig),
         ("xlm-roberta", XLMRobertaConfig),
         ("pegasus", PegasusConfig),
         ("marian", MarianConfig),
@@ -128,6 +130,7 @@ MODEL_NAMES_MAPPING = OrderedDict(
         ("albert", "ALBERT"),
         ("bert-generation", "Bert Generation"),
         ("camembert", "CamemBERT"),
+        ("convbert", "ConvBERT"),
         ("xlm-roberta", "XLM-RoBERTa"),
         ("pegasus", "Pegasus"),
         ("marian", "Marian"),

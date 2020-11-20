@@ -25,7 +25,7 @@ import torch
 import torch.nn as nn
 from torch.nn import CrossEntropyLoss, MSELoss
 
-from .configuration_albert import AlbertConfig
+from .configuration_convbert import ConvbertConfig
 from .file_utils import (
     ModelOutput,
     add_code_sample_docstrings,
@@ -45,10 +45,16 @@ from .modeling_outputs import (
 )
 from .modeling_utils import PreTrainedModel, find_pruneable_heads_and_indices
 
+try:
+    from .dynamicconv_layer import DynamicconvFunction
+    USE_KERNEL = True
+except ImportError:
+    USE_KERNEL = False
+    print('Cuda kernel for convbert is unavailable')
 
 logger = logging.getLogger(__name__)
 
-_CONFIG_FOR_DOC = "AlbertConfig"
+_CONFIG_FOR_DOC = "ConvbertConfig"
 _TOKENIZER_FOR_DOC = "ConvbertTokenizer"
 
 
@@ -256,6 +262,7 @@ class ConvbertAttention(nn.Module):
     def forward(self, input_ids, attention_mask=None, head_mask=None, output_attentions=False):
         '''The conventional implementation of convolutions.
         Unfolding the input by having a window shifting to the right.'''
+        #print(input_ids.size())
         B, T, C = input_ids.size()
         K, H = self.kernel_size, self.num_attention_heads
         R = C // H
@@ -263,6 +270,8 @@ class ConvbertAttention(nn.Module):
 
         weight = self.query(input_ids).view(B, T, H, K)
         if attention_mask is not None:
+            if self.weight_softmax:
+                attention_mask = (1 - attention_mask) * -10000
             pad_value = -10000 if self.weight_softmax else 0
             attention_mask = self.unfold1d(attention_mask.view(B, T, 1), K, self.padding_l, pad_value)
             if self.weight_softmax:
@@ -276,9 +285,6 @@ class ConvbertAttention(nn.Module):
         if K > T and padding_l == K-1:
             weight = weight.narrow(1, K-T, T)
             K, padding_l = T, T-1
-        # unfold the input: B x T x C --> B x T' x C x K
-        x_unfold = self.unfold1d(input_ids, K, padding_l, 0)
-        x_unfold = x_unfold.view(B*T*H, R, K)
 
         if self.weight_softmax:
             weight = torch.nn.functional.softmax(weight, dim=1)
@@ -286,8 +292,17 @@ class ConvbertAttention(nn.Module):
 
         weight = self.dropout(weight)
 
-        output = torch.bmm(x_unfold, weight.unsqueeze(2))  # B*T*H x R x 1
-        output = output.view(B, T, H, R)
+        if torch.cuda.is_available() and USE_KERNEL:
+                weight_ = weight.view(B, T, H, K).permute(0, 2, 3, 1).contiguous()  # B H K T
+                permuted = input_ids.permute(0, 2, 1).contiguous() # B C T
+                output = DynamicconvFunction.apply(permuted, weight_, self.padding_l).permute(0, 2, 1).view(B, T, H, R) # B C T
+        else:
+            # unfold the input: B x T x C --> B x T' x C x K
+            x_unfold = self.unfold1d(input_ids, K, padding_l, 0)
+            x_unfold = x_unfold.view(B*T*H, R, K)
+
+            output = torch.bmm(x_unfold, weight.unsqueeze(2))  # B*T*H x R x 1
+            output = output.view(B, T, H, R)
         
         # Should find a better way to do this
         w = (
@@ -296,11 +311,11 @@ class ConvbertAttention(nn.Module):
             .to(output.dtype)
         )
         b = self.dense.bias.to(output.dtype)
-
+        #print(output.size())
         projected_context_layer = torch.einsum("bfnd,ndh->bfh", output, w) + b
         projected_context_layer_dropout = self.dropout(projected_context_layer)
         layernormed_context_layer = self.LayerNorm(input_ids + projected_context_layer_dropout)
-        return (layernormed_context_layer, weight) if output_attentions else (layernormed_context_layer,)
+        return (layernormed_context_layer, output[0][0][0]) if output_attentions else (layernormed_context_layer,)
 
 
 class ConvbertLayer(nn.Module):
@@ -346,7 +361,7 @@ class ConvbertLayerGroup(nn.Module):
                 layer_attentions = layer_attentions + (layer_output[1],)
 
             if output_hidden_states:
-                layer_hidden_states = layer_hidden_states + (hidden_states,)
+                layer_hidden_states = layer_hidden_states + layer_output
 
         outputs = (hidden_states,)
         if output_hidden_states:
@@ -412,7 +427,7 @@ class ConvbertPreTrainedModel(PreTrainedModel):
         a simple interface for downloading and loading pretrained models.
     """
 
-    config_class = AlbertConfig
+    config_class = ConvbertConfig
     base_model_prefix = "convbert"
 
     def _init_weights(self, module):
@@ -469,7 +484,7 @@ CONVBERT_START_DOCSTRING = r"""
     usage and behavior.
 
     Args:
-        config (:class:`~transformers.AlbertConfig`): Model configuration class with all the parameters of the model.
+        config (:class:`~transformers.ConvbertConfig`): Model configuration class with all the parameters of the model.
             Initializing with a config file does not load the weights associated with the model, only the configuration.
             Check out the :meth:`~transformers.PreTrainedModel.from_pretrained` method to load the model weights.
 """
@@ -524,7 +539,7 @@ CONVBERT_INPUTS_DOCSTRING = r"""
 )
 class ConvbertModel(ConvbertPreTrainedModel):
 
-    config_class = AlbertConfig
+    config_class = ConvbertConfig
     load_tf_weights = load_tf_weights_in_convbert
     base_model_prefix = "convbert"
 

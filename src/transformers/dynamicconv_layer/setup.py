@@ -8,7 +8,8 @@ from setuptools import setup
 from torch.utils.cpp_extension import CUDAExtension, BuildExtension
 
 setup(
-    name='dynamicconv_layer',
+    name='dynamicconv_cuda',
+    version='0.0.2',
     ext_modules=[
         CUDAExtension(
             name='dynamicconv_cuda',

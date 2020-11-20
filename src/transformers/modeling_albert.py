@@ -328,11 +328,10 @@ class AlbertAttention(nn.Module):
             .to(context_layer.dtype)
         )
         b = self.dense.bias.to(context_layer.dtype)
-
         projected_context_layer = torch.einsum("bfnd,ndh->bfh", context_layer, w) + b
         projected_context_layer_dropout = self.output_dropout(projected_context_layer)
         layernormed_context_layer = self.LayerNorm(input_ids + projected_context_layer_dropout)
-        return (layernormed_context_layer, attention_probs) if output_attentions else (layernormed_context_layer,)
+        return (layernormed_context_layer, attention_probs[0][0]) if output_attentions else (layernormed_context_layer,)
 
 
 class AlbertLayer(nn.Module):

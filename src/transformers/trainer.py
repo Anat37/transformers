@@ -731,7 +731,7 @@ class Trainer:
             if self.args.past_index >= 0:
                 self._past = None
 
-            epoch_pbar = tqdm(epoch_iterator, desc="Iteration", disable=disable_tqdm)
+            epoch_pbar = tqdm(epoch_iterator, desc="Iteration", disable=disable_tqdm, ncols=100)
             for step, inputs in enumerate(epoch_iterator):
 
                 # Skip past any already trained steps if resuming training
