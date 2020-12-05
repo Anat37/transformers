@@ -225,6 +225,7 @@ class ConvbertAttention(nn.Module):
 
         # mod self.query_size, num_heads * kernel_size * 1, bias=bias
         self.query = nn.Linear(config.hidden_size, self.num_attention_heads * self.kernel_size)
+        self.value = nn.Linear(config.hidden_size, self.all_head_size)
 
 
     def transpose_for_scores(self, x):
@@ -242,6 +243,7 @@ class ConvbertAttention(nn.Module):
 
         # Prune linear layers
         self.query = prune_linear_layer(self.query, index)
+        self.value = prune_linear_layer(self.value, index)
         self.dense = prune_linear_layer(self.dense, index, dim=1)
 
         # Update hyper params and store pruned heads
@@ -291,14 +293,15 @@ class ConvbertAttention(nn.Module):
         weight = weight.narrow(1, 0, K)
 
         weight = self.dropout(weight)
+        value_layer = self.value(input_ids)
 
         if torch.cuda.is_available() and USE_KERNEL:
                 weight_ = weight.view(B, T, H, K).permute(0, 2, 3, 1).contiguous()  # B H K T
-                permuted = input_ids.permute(0, 2, 1).contiguous() # B C T
+                permuted = value_layer.permute(0, 2, 1).contiguous() # B C T
                 output = DynamicconvFunction.apply(permuted, weight_, self.padding_l).permute(0, 2, 1).view(B, T, H, R) # B C T
         else:
             # unfold the input: B x T x C --> B x T' x C x K
-            x_unfold = self.unfold1d(input_ids, K, padding_l, 0)
+            x_unfold = self.unfold1d(value_layer, K, padding_l, 0)
             x_unfold = x_unfold.view(B*T*H, R, K)
 
             output = torch.bmm(x_unfold, weight.unsqueeze(2))  # B*T*H x R x 1
@@ -559,6 +562,8 @@ class ConvbertModel(ConvbertPreTrainedModel):
 
     def set_input_embeddings(self, value):
         self.embeddings.word_embeddings = value
+        for param in self.embeddings.word_embeddings.parameters():
+            param.requires_grad = False
 
     def _resize_token_embeddings(self, new_num_tokens):
         old_embeddings = self.embeddings.word_embeddings
