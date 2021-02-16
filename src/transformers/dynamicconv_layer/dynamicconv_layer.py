@@ -8,7 +8,7 @@ from torch import nn
 from torch.autograd import Function
 import torch.nn.functional as F
 
-import example_module
+import dynamic_convolution
 
 
 class DynamicconvFunction(Function):
@@ -16,14 +16,14 @@ class DynamicconvFunction(Function):
     @staticmethod
     def forward(ctx, x, weights, padding_l):
         ctx.padding_l = padding_l
-        outputs = example_module.forward(x, weights, padding_l)
+        outputs = dynamic_convolution.forward(x, weights, padding_l)
         variables = [x, weights]
         ctx.save_for_backward(*variables)
         return outputs[0]
 
     @staticmethod
     def backward(ctx, grad_output):
-        outputs = example_module.backward(
+        outputs = dynamic_convolution.backward(
                 grad_output.contiguous(),
                 ctx.padding_l,
                 *ctx.saved_tensors)

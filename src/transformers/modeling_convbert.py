@@ -562,8 +562,8 @@ class ConvbertModel(ConvbertPreTrainedModel):
 
     def set_input_embeddings(self, value):
         self.embeddings.word_embeddings = value
-        for param in self.embeddings.word_embeddings.parameters():
-            param.requires_grad = False
+        #for param in self.embeddings.word_embeddings.parameters():
+        #    param.requires_grad = False
 
     def _resize_token_embeddings(self, new_num_tokens):
         old_embeddings = self.embeddings.word_embeddings
