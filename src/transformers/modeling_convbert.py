@@ -318,7 +318,7 @@ class ConvbertAttention(nn.Module):
         projected_context_layer = torch.einsum("bfnd,ndh->bfh", output, w) + b
         projected_context_layer_dropout = self.dropout(projected_context_layer)
         layernormed_context_layer = self.LayerNorm(input_ids + projected_context_layer_dropout)
-        return (layernormed_context_layer, output[0][0][0]) if output_attentions else (layernormed_context_layer,)
+        return (layernormed_context_layer, weight) if output_attentions else (layernormed_context_layer,)
 
 
 class ConvbertLayer(nn.Module):
