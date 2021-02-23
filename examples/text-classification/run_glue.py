@@ -25,7 +25,7 @@ from typing import Callable, Dict, Optional
 
 import numpy as np
 
-from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer, EvalPrediction, GlueDataset
+from transformers import AutoConfig, AutoModelForSequenceClassification, AutoModelLSTMForSequenceClassification, AutoTokenizer, EvalPrediction, GlueDataset
 from transformers import GlueDataTrainingArguments as DataTrainingArguments
 from transformers import (
     HfArgumentParser,
@@ -58,6 +58,9 @@ class ModelArguments:
     )
     cache_dir: Optional[str] = field(
         default=None, metadata={"help": "Where do you want to store the pretrained models downloaded from s3"}
+    )
+    use_lstm: Optional[bool] = field(
+        default=None, metadata={"help": "Use lstm for sequence classification"}
     )
 
 
@@ -132,6 +135,14 @@ def main():
         config=config,
         cache_dir=model_args.cache_dir,
     )
+    if model_args.use_lstm:
+        model = AutoModelLSTMForSequenceClassification.from_pretrained(
+            model_args.model_name_or_path,
+            from_tf=bool(".ckpt" in model_args.model_name_or_path),
+            config=config,
+            cache_dir=model_args.cache_dir,
+        )
+
 
     # Get datasets
     train_dataset = (

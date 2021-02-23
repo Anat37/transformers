@@ -70,6 +70,7 @@ from .modeling_convbert import (
     ConvbertForPreTraining,
     ConvbertForQuestionAnswering,
     ConvbertForSequenceClassification,
+    ConvbertLSTMForSequenceClassification,
     ConvbertForTokenClassification,
     ConvbertModel,
 )
@@ -374,6 +375,12 @@ MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING = OrderedDict(
         (XLMConfig, XLMForSequenceClassification),
         (ElectraConfig, ElectraForSequenceClassification),
         (FunnelConfig, FunnelForSequenceClassification),
+    ]
+)
+
+MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING = OrderedDict(
+    [
+        (ConvbertConfig, ConvbertLSTMForSequenceClassification),
     ]
 )
 
@@ -1200,6 +1207,54 @@ class AutoModelForSequenceClassification:
                 config.__class__,
                 cls.__name__,
                 ", ".join(c.__name__ for c in MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys()),
+            )
+        )
+
+
+class AutoModelLSTMForSequenceClassification:
+    def __init__(self):
+        raise EnvironmentError(
+            "AutoModelForSequenceClassification is designed to be instantiated "
+            "using the `AutoModelForSequenceClassification.from_pretrained(pretrained_model_name_or_path)` or "
+            "`AutoModelForSequenceClassification.from_config(config)` methods."
+        )
+
+    @classmethod
+    def from_config(cls, config):
+        if type(config) in MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys():
+            return MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING[type(config)](config)
+        raise ValueError(
+            "Unrecognized configuration class {} for this kind of AutoModel: {}.\n"
+            "Model type should be one of {}.".format(
+                config.__class__,
+                cls.__name__,
+                ", ".join(c.__name__ for c in MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys()),
+            )
+        )
+
+    @classmethod
+    @add_start_docstrings(
+        "Instantiate one of the model classes of the library---with a sequence classification head---from a "
+        "pretrained model.",
+        AUTO_MODEL_PRETRAINED_DOCSTRING,
+    )
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
+        config = kwargs.pop("config", None)
+        if not isinstance(config, PretrainedConfig):
+            config, kwargs = AutoConfig.from_pretrained(
+                pretrained_model_name_or_path, return_unused_kwargs=True, **kwargs
+            )
+
+        if type(config) in MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys():
+            return MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING[type(config)].from_pretrained(
+                pretrained_model_name_or_path, *model_args, config=config, **kwargs
+            )
+        raise ValueError(
+            "Unrecognized configuration class {} for this kind of AutoModel: {}.\n"
+            "Model type should be one of {}.".format(
+                config.__class__,
+                cls.__name__,
+                ", ".join(c.__name__ for c in MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING.keys()),
             )
         )
 

@@ -269,6 +269,7 @@ if is_torch_available():
         AutoModelForQuestionAnswering,
         AutoModelForSeq2SeqLM,
         AutoModelForSequenceClassification,
+        AutoModelLSTMForSequenceClassification,
         AutoModelForTokenClassification,
         AutoModelWithLMHead,
     )
