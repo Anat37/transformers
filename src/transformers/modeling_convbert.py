@@ -221,7 +221,6 @@ class ConvbertAttention(nn.Module):
         # new
         self.kernel_size = config.kernel_size
         self.padding_l = self.kernel_size // 2
-        self.weight_softmax = True
 
         # mod self.query_size, num_heads * kernel_size * 1, bias=bias
         self.query = nn.Linear(config.hidden_size, self.num_attention_heads * self.kernel_size)
@@ -271,11 +270,7 @@ class ConvbertAttention(nn.Module):
         assert R * H == C == self.attention_head_size * self.num_attention_heads
 
         weight = self.query(input_ids).view(B, T, H, K)
-        if attention_mask is not None:
-            if self.weight_softmax:
-                weight = weight + attention_mask
-            else:
-                weight = weight.multiply(attention_mask)
+        weight = weight + attention_mask
         
         weight = weight.view(B*T*H, -1) # B*T*H, K
 
@@ -284,8 +279,7 @@ class ConvbertAttention(nn.Module):
             weight = weight.narrow(1, K-T, T)
             K, padding_l = T, T-1
 
-        if self.weight_softmax:
-            weight = torch.nn.functional.softmax(weight, dim=1)
+        weight = torch.nn.functional.softmax(weight, dim=1)
         weight = weight.narrow(1, 0, K)
 
         weight = self.dropout(weight)
@@ -377,7 +371,6 @@ class ConvbertTransformer(nn.Module):
         self.config = config
         self.embedding_hidden_mapping_in = nn.Linear(config.embedding_size, config.hidden_size)
         self.convbert_layer_groups = nn.ModuleList([ConvbertLayerGroup(config) for _ in range(config.num_hidden_groups)])
-        self.weight_softmax = True
         self.kernel_size = config.kernel_size
         self.padding_l = self.kernel_size // 2
 
@@ -406,9 +399,7 @@ class ConvbertTransformer(nn.Module):
         all_attentions = () if output_attentions else None
 
         if attention_mask is not None:
-            if self.weight_softmax:
-                attention_mask = (1 - attention_mask) * -10000
-            pad_value = -10000 if self.weight_softmax else 0
+            pad_value = -10000
             B, T, C = hidden_states.size()
             attention_mask = self.unfold1d(attention_mask.view(B, T, 1), self.kernel_size, self.padding_l, pad_value)
 
