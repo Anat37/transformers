@@ -61,6 +61,7 @@ from .modeling_albert import (
     AlbertForPreTraining,
     AlbertForQuestionAnswering,
     AlbertForSequenceClassification,
+    AlbertLSTMForSequenceClassification,
     AlbertForTokenClassification,
     AlbertModel,
 )
@@ -380,6 +381,7 @@ MODEL_FOR_SEQUENCE_CLASSIFICATION_MAPPING = OrderedDict(
 
 MODEL_LSTM_FOR_SEQUENCE_CLASSIFICATION_MAPPING = OrderedDict(
     [
+        (AlbertConfig, AlbertLSTMForSequenceClassification),
         (ConvbertConfig, ConvbertLSTMForSequenceClassification),
     ]
 )

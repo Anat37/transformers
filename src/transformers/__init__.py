@@ -245,6 +245,7 @@ if is_torch_available():
         AlbertForPreTraining,
         AlbertForQuestionAnswering,
         AlbertForSequenceClassification,
+        AlbertLSTMForSequenceClassification,
         AlbertForTokenClassification,
         AlbertModel,
         AlbertPreTrainedModel,

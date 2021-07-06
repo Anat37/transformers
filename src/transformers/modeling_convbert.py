@@ -264,6 +264,8 @@ class ConvbertAttention(nn.Module):
         '''The conventional implementation of convolutions.
         Unfolding the input by having a window shifting to the right.'''
         #print(input_ids.size())
+        #print('input')
+        #print(input_ids[0, :, 1])
         B, T, C = input_ids.size()
         K, H = self.kernel_size, self.num_attention_heads
         R = C // H
@@ -284,6 +286,9 @@ class ConvbertAttention(nn.Module):
 
         weight = self.dropout(weight)
         value_layer = self.value(input_ids)
+        #print('value_layer')
+        #print(value_layer.size())
+        #print(value_layer[0, :, 65])
 
         if torch.cuda.is_available() and USE_KERNEL:
                 weight_ = weight.view(B, T, H, K).permute(0, 2, 3, 1).contiguous()  # B H K T
@@ -297,6 +302,8 @@ class ConvbertAttention(nn.Module):
             output = torch.bmm(x_unfold, weight.unsqueeze(2))  # B*T*H x R x 1
             output = output.view(B, T, H, R)
         
+        #print('before residual')
+        #print(output[0, :, 1, 1])
         # Should find a better way to do this
         w = (
             self.dense.weight.t()
@@ -307,7 +314,11 @@ class ConvbertAttention(nn.Module):
         #print(output.size())
         projected_context_layer = torch.einsum("bfnd,ndh->bfh", output, w) + b
         projected_context_layer_dropout = self.dropout(projected_context_layer)
+        #print('before residual')
+        #print(projected_context_layer_dropout[0, :, 1])
         layernormed_context_layer = self.LayerNorm(input_ids + projected_context_layer_dropout)
+        #print('residual')
+        #print(layernormed_context_layer[0, :, 1])
         return (layernormed_context_layer, weight) if output_attentions else (layernormed_context_layer,)
 
 
@@ -330,7 +341,6 @@ class ConvbertLayer(nn.Module):
         ffn_output = self.activation(ffn_output)
         ffn_output = self.ffn_output(ffn_output)
         hidden_states = self.full_layer_layer_norm(ffn_output + attention_output[0])
-
         return (hidden_states,) + attention_output[1:]  # add attentions if we output them
 
 
@@ -653,7 +663,6 @@ class ConvbertModel(ConvbertPreTrainedModel):
             output_hidden_states=output_hidden_states,
             return_dict=return_dict,
         )
-
         sequence_output = encoder_outputs[0]
 
         pooled_output = self.pooler_activation(self.pooler(sequence_output[:, 0]))
@@ -764,7 +773,6 @@ class ConvbertForPreTraining(ConvbertPreTrainedModel):
 
         prediction_scores = self.predictions(sequence_output)
         sop_scores = self.sop_classifier(pooled_output)
-
         total_loss = None
         if labels is not None and sentence_order_label is not None:
             loss_fct = CrossEntropyLoss()
